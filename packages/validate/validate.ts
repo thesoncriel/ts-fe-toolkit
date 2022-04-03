@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import fn from './fn';
 import {
   ValidateBulkOptionType,
   ValidateBulkResultModel,
@@ -6,17 +7,24 @@ import {
   ValidateResultModel,
 } from './validate.type';
 
-function validateSingle<T>(
+function _validateSingle<T>(
   val: T,
   item: ValidateCheckModel<T>
 ): ValidateResultModel {
-  const result = item.check(val);
-  const msg = !result ? item.message : '';
+  try {
+    const result = item.check(val);
+    const msg = !result ? item.message : '';
 
-  return {
-    result,
-    message: msg,
-  };
+    return {
+      result,
+      message: msg,
+    };
+  } catch (error) {
+    return {
+      result: false,
+      message: `_validateSingle: ${error.message}`,
+    };
+  }
 }
 
 function _validateBulk<T>(
@@ -24,7 +32,8 @@ function _validateBulk<T>(
   opt:
     | ValidateCheckModel<T>
     | ValidateCheckModel<T>[]
-    | ((value: T) => ValidateBulkResultModel)
+    | ((value: T) => ValidateBulkResultModel),
+  validateSingle = _validateSingle
 ): ValidateResultModel {
   let mRes: ValidateResultModel | undefined;
 
@@ -56,9 +65,15 @@ function _validateBulk<T>(
   );
 }
 
-export function validate<T>(
+function validateMain<T extends Record<string, any>>(
   state: T,
   opt: ValidateBulkOptionType<T>
+): ValidateBulkResultModel;
+
+function validateMain<T extends Record<string, any>>(
+  state: T,
+  opt: ValidateBulkOptionType<T>,
+  validateBulk = _validateBulk
 ): ValidateBulkResultModel {
   const mRet: Record<string, ValidateResultModel> = {};
   const invalidKeys: string[] = [];
@@ -68,9 +83,9 @@ export function validate<T>(
   let firstMessage = '';
 
   Object.keys(opt).forEach((key) => {
-    const val = (state as any)[key];
-    const items = (opt as any)[key];
-    const _mRet = _validateBulk(val, items);
+    const val = state[key];
+    const items = opt[key];
+    const _mRet = validateBulk(val, items);
 
     mRet[key] = _mRet;
     isValid = isValid && _mRet.result;
@@ -96,3 +111,13 @@ export function validate<T>(
     firstMessage,
   };
 }
+
+export const validate = validateMain as typeof validateMain & {
+  fn: typeof fn;
+  _validateSingle: typeof _validateSingle;
+  _validateBulk: typeof _validateBulk;
+};
+
+validate.fn = fn;
+validate._validateSingle = _validateSingle;
+validate._validateBulk = _validateBulk;

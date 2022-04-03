@@ -1,18 +1,13 @@
 import { validate } from './validate';
-import fn from './fn';
-
-type ValidationCheckerType = typeof validate & {
-  fn: typeof fn;
-};
 
 /**
  * @description
  * 유효성 여부를 한번에 확인 한다.
- * 
+ *
  * @example
  * ```ts
  *  import { validate } from 'ts-fe-toolkit';
- * 
+ *
     interface UserModel {
       name: string;
       phone: string;
@@ -29,7 +24,7 @@ type ValidationCheckerType = typeof validate & {
           check: val => validate.fn.empty(val),
         },
         // phone 이 필수가 아니라면 생략한다.
-        
+
         // 여러가지 형태를 검증하고 메시지를 다르게 주고 싶을 땐 배열로 넘겨준다.
         password: [
           {
@@ -51,12 +46,10 @@ type ValidationCheckerType = typeof validate & {
  * ```
  * @param state 유효성 체크 할 값이 모여있는 객체.
  * @param opt 유효성 체크 옵션.
- * 
+ *
  * @see ValidateBulkResultModel
  */
-const validateFn = validate as ValidationCheckerType;
-
-validateFn.fn = fn;
+const validateFn = validate;
 
 export default validateFn;
 
